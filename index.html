@@ -45,6 +45,23 @@
     }
   </style>
 </head>
+<script>
+    Telegram.WebApp.ready(); // Ініціалізація WebApp
+
+    function sendData() {
+        const form = document.querySelector('form');
+        const formData = new FormData(form);
+        const json = {};
+
+        formData.forEach((value, key) => {
+            json[key] = value;
+        });
+
+        // Надсилаємо JSON у бот
+        Telegram.WebApp.sendData(JSON.stringify(json));
+    }
+</script>
+
 <body>
   <h1>Нова фушка</h1>
   <form id="fushka-form">
@@ -75,7 +92,8 @@
     <label for="note">📝 Додатково</label>
     <textarea id="note"></textarea>
 
-    <button type="submit">📤 Надіслати</button>
+    <button type="button" onclick="sendData()">Надіслати</button>
+
   </form>
 
   <script>
@@ -102,5 +120,5 @@
       Telegram.WebApp.ready();
     }
   </script>
-</body>
+  </body>
 </html>
