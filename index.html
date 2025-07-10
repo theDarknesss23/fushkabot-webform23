@@ -45,80 +45,57 @@
     }
   </style>
 </head>
-<script>
-    Telegram.WebApp.ready(); // Ініціалізація WebApp
-
-    function sendData() {
-        const form = document.querySelector('form');
-        const formData = new FormData(form);
-        const json = {};
-
-        formData.forEach((value, key) => {
-            json[key] = value;
-        });
-
-        // Надсилаємо JSON у бот
-        Telegram.WebApp.sendData(JSON.stringify(json));
-    }
-</script>
-
 <body>
   <h1>Нова фушка</h1>
   <form id="fushka-form">
     <label for="description">📝 Опис фушки</label>
-    <textarea id="description" required></textarea>
+    <textarea id="description" name="description" required></textarea>
 
     <label for="company">🏢 Назва компанії</label>
-    <input id="company" required />
+    <input id="company" name="company" required />
 
     <label for="location">📍 Локація</label>
-    <input id="location" required />
+    <input id="location" name="location" required />
 
     <label for="date">📆 Дата</label>
-    <input id="date" type="text" required />
+    <input id="date" name="date" type="text" required />
 
     <label for="hours">⏰ Початок / кінець</label>
-    <input id="hours" required />
+    <input id="hours" name="hours" required />
 
     <label for="rate">💰 Ставка (Kč/год)</label>
-    <input id="rate" type="number" required />
+    <input id="rate" name="rate" type="number" required />
 
     <label for="type">🧤 Тип роботи</label>
-    <input id="type" required />
+    <input id="type" name="type" required />
 
     <label for="people">👤 Кількість людей</label>
-    <input id="people" type="number" required />
+    <input id="people" name="people" type="number" required />
 
     <label for="note">📝 Додатково</label>
-    <textarea id="note"></textarea>
+    <textarea id="note" name="note"></textarea>
 
-    <button type="button" onclick="sendData()">Надіслати</button>
-
+    <button type="submit">Надіслати</button>
   </form>
 
   <script>
     const form = document.getElementById('fushka-form');
-
     form.addEventListener('submit', function(e) {
       e.preventDefault();
-      const data = {
-        "📝 Опис фушки": document.getElementById('description').value,
-        "🏢 Назва компанії": document.getElementById('company').value,
-        "📍 Локація": document.getElementById('location').value,
-        "📆 Дата": document.getElementById('date').value,
-        "⏰ Початок / кінець": document.getElementById('hours').value,
-        "💰 Ставка": document.getElementById('rate').value,
-        "🧤 Тип роботи": document.getElementById('type').value,
-        "👤 Кількість людей": document.getElementById('people').value,
-        "📝 Додатково": document.getElementById('note').value
-      };
-      Telegram.WebApp.sendData(JSON.stringify(data));
+      const formData = new FormData(form);
+      const data = {};
+      formData.forEach((value, key) => {
+        data[key] = value;
+      });
+      console.log('Дані для надсилання:', data);
+      if (window.Telegram && Telegram.WebApp) {
+        Telegram.WebApp.ready();
+        Telegram.WebApp.sendData(JSON.stringify(data));
+        console.log('Дані надіслано!');
+      } else {
+        alert('Telegram WebApp не знайдено!');
+      }
     });
-
-    // Initialize Telegram WebApp
-    if (Telegram.WebApp) {
-      Telegram.WebApp.ready();
-    }
   </script>
-  </body>
+</body>
 </html>
