@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Форма фушки</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background-color: #f9f9f9;
+      padding: 20px;
+      max-width: 500px;
+      margin: auto;
+    }
+    h1 {
+      text-align: center;
+      color: #1b4d8a;
+    }
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: bold;
+    }
+    input, textarea, select {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+    button {
+      margin-top: 20px;
+      width: 100%;
+      padding: 12px;
+      background-color: #1b4d8a;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #153d70;
+    }
+  </style>
+</head>
+<body>
+  <h1>Нова фушка</h1>
+  <form id="fushka-form">
+    <label for="description">📝 Опис фушки</label>
+    <textarea id="description" required></textarea>
+
+    <label for="company">🏢 Назва компанії</label>
+    <input id="company" required />
+
+    <label for="location">📍 Локація</label>
+    <input id="location" required />
+
+    <label for="date">📆 Дата</label>
+    <input id="date" type="text" required />
+
+    <label for="hours">⏰ Початок / кінець</label>
+    <input id="hours" required />
+
+    <label for="rate">💰 Ставка (Kč/год)</label>
+    <input id="rate" type="number" required />
+
+    <label for="type">🧤 Тип роботи</label>
+    <input id="type" required />
+
+    <label for="people">👤 Кількість людей</label>
+    <input id="people" type="number" required />
+
+    <label for="note">📝 Додатково</label>
+    <textarea id="note"></textarea>
+
+    <button type="submit">📤 Надіслати</button>
+  </form>
+
+  <script>
+    const form = document.getElementById('fushka-form');
+
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const data = {
+        "📝 Опис фушки": document.getElementById('description').value,
+        "🏢 Назва компанії": document.getElementById('company').value,
+        "📍 Локація": document.getElementById('location').value,
+        "📆 Дата": document.getElementById('date').value,
+        "⏰ Початок / кінець": document.getElementById('hours').value,
+        "💰 Ставка": document.getElementById('rate').value,
+        "🧤 Тип роботи": document.getElementById('type').value,
+        "👤 Кількість людей": document.getElementById('people').value,
+        "📝 Додатково": document.getElementById('note').value
+      };
+      Telegram.WebApp.sendData(JSON.stringify(data));
+    });
+
+    // Initialize Telegram WebApp
+    if (Telegram.WebApp) {
+      Telegram.WebApp.ready();
+    }
+  </script>
+</body>
+</html>
