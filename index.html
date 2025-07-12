@@ -88,12 +88,16 @@
         data[key] = value;
       });
       console.log('Дані для надсилання:', data);
-      if (window.Telegram && Telegram.WebApp) {
-        Telegram.WebApp.ready();
-        Telegram.WebApp.sendData(JSON.stringify(data));
+      console.log('window.Telegram:', window.Telegram);
+      console.log('window.Telegram.WebApp:', window.Telegram ? window.Telegram.WebApp : undefined);
+      if (window.Telegram && window.Telegram.WebApp) {
+        // Ви у Telegram WebApp, можна відправляти дані
+        window.Telegram.WebApp.ready();
+        window.Telegram.WebApp.sendData(JSON.stringify(data));
+        window.Telegram.WebApp.close();
         console.log('Дані надіслано!');
       } else {
-        alert('Telegram WebApp не знайдено!');
+        alert("Telegram WebApp не знайдено! Відкрийте форму через Telegram.");
       }
     });
   </script>
