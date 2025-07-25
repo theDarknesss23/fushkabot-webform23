@@ -237,9 +237,10 @@
         if (telegram && webApp) {
             try {
                 log('Відправляємо дані через webApp.sendData:', data);
-                webApp.sendData(JSON.stringify(data));
+               const result = webApp.sendData(JSON.stringify(data));
+               log('Результат відправки:', result);
                 log('Закриваємо WebApp через webApp.close()');
-                webApp.close();
+               // webApp.close();
                 log('Дані успішно відправлено в Telegram!');
             } catch (error) {
                 log('Помилка відправки даних:', error);
