@@ -90,11 +90,19 @@
   </form>
 
   <script>
+    // Додаємо глобальний логгер для зручності
+    function log(...args) {
+      console.log('[FUSHKA LOG]', ...args);
+    }
+
     // Функція для відображення діагностичної інформації
     function showDebugInfo() {
+        log('Виклик showDebugInfo');
         const debugInfo = document.getElementById('debug-info');
         const telegram = window.Telegram || window.telegram;
         const webApp = telegram ? (telegram.WebApp || telegram.webApp) : null;
+        log('showDebugInfo: telegram =', telegram);
+        log('showDebugInfo: webApp =', webApp);
         
         const info = {
             'User Agent': navigator.userAgent,
@@ -111,54 +119,85 @@
             debugText += `<strong>${key}:</strong> ${value}<br>`;
         }
         debugInfo.innerHTML = debugText;
+        log('showDebugInfo: оновлено діагностичну панель');
     }
 
     // Функція для ініціалізації Telegram WebApp
     function initTelegramWebApp() {
-        console.log('Спроба ініціалізації Telegram WebApp...');
-        console.log('window.Telegram:', window.Telegram);
-        console.log('window.Telegram.WebApp:', window.Telegram ? window.Telegram.WebApp : 'не знайдено');
+        log('Спроба ініціалізації Telegram WebApp...');
+        log('window.Telegram:', window.Telegram);
+        log('window.Telegram.WebApp:', window.Telegram ? window.Telegram.WebApp : 'не знайдено');
         
         // Перевіряємо різні варіанти доступу до Telegram WebApp
         const telegram = window.Telegram || window.telegram;
         const webApp = telegram ? (telegram.WebApp || telegram.webApp) : null;
         
-        console.log('Альтернативна перевірка - telegram:', telegram);
-        console.log('Альтернативна перевірка - webApp:', webApp);
+        log('Альтернативна перевірка - telegram:', telegram);
+        log('Альтернативна перевірка - webApp:', webApp);
         
         if (telegram && webApp) {
             try {
+                log('Викликаємо webApp.ready()');
                 webApp.ready();
+                log('Викликаємо webApp.expand()');
                 webApp.expand();
-                console.log('Telegram WebApp успішно ініціалізовано!');
+                log('Telegram WebApp успішно ініціалізовано!');
                 return true;
             } catch (error) {
-                console.error('Помилка ініціалізації Telegram WebApp:', error);
+                log('Помилка ініціалізації Telegram WebApp:', error);
                 return false;
             }
         } else {
-            console.warn('Telegram WebApp не знайдено!');
+            log('Telegram WebApp не знайдено!');
             return false;
         }
     }
 
+    // Додаємо логування для всіх полів форми
+    function addFormFieldLogging() {
+      const form = document.getElementById('fushka-form');
+      if (!form) {
+        log('Форма не знайдена для логування полів!');
+        return;
+      }
+      const fields = form.querySelectorAll('input, textarea, select');
+      fields.forEach(field => {
+        field.addEventListener('input', (e) => {
+          log(`Поле '${field.name}' змінилось:`, e.target.value);
+        });
+        field.addEventListener('focus', (e) => {
+          log(`Фокус на полі '${field.name}'`);
+        });
+        field.addEventListener('blur', (e) => {
+          log(`Втрата фокусу з поля '${field.name}', значення:`, e.target.value);
+        });
+      });
+      log('Додано логування для всіх полів форми');
+    }
+
     // Ініціалізація при завантаженні DOM
     document.addEventListener("DOMContentLoaded", function() {
-        console.log('DOM завантажено, ініціалізуємо Telegram WebApp...');
+        log('DOM завантажено, ініціалізуємо Telegram WebApp...');
         
         // Показуємо початкову діагностику
         showDebugInfo();
         
+        // Додаємо логування для полів форми
+        addFormFieldLogging();
+        
         // Спроба ініціалізації
         if (!initTelegramWebApp()) {
+            log('Перша спроба ініціалізації не вдалася, чекаємо 1 сек.');
             // Якщо не вдалося ініціалізувати одразу, спробуємо через невелику затримку
             setTimeout(function() {
-                console.log('Повторна спроба ініціалізації Telegram WebApp...');
+                log('Повторна спроба ініціалізації Telegram WebApp...');
                 if (!initTelegramWebApp()) {
+                    log('Друга спроба не вдалася, чекаємо ще 2 сек.');
                     // Спроба через більшу затримку
                     setTimeout(function() {
-                        console.log('Третя спроба ініціалізації Telegram WebApp...');
+                        log('Третя спроба ініціалізації Telegram WebApp...');
                         if (!initTelegramWebApp()) {
+                            log('Telegram WebApp не знайдено після трьох спроб!');
                             alert("Telegram WebApp не знайдено! Відкрийте форму через Telegram.");
                         }
                         showDebugInfo();
@@ -168,6 +207,7 @@
                 showDebugInfo();
             }, 1000);
         } else {
+            log('Telegram WebApp ініціалізовано з першої спроби!');
             // Оновлюємо діагностику якщо ініціалізація успішна
             setTimeout(showDebugInfo, 500);
         }
@@ -176,34 +216,37 @@
     // Обробка відправки форми
     document.getElementById('fushka-form').addEventListener('submit', function(e) {
         e.preventDefault();
-        console.log('Форма відправляється...');
+        log('Форма відправляється...');
         
         const formData = new FormData(this);
         const data = {};
         for (let [key, value] of formData.entries()) {
             data[key] = value;
         }
-        
-        console.log('Дані форми:', data);
-        console.log('Перевіряємо наявність Telegram WebApp...');
-        console.log('window.Telegram:', window.Telegram);
-        console.log('window.Telegram.WebApp:', window.Telegram ? window.Telegram.WebApp : 'не знайдено');
+        log('Дані форми:', data);
+        log('Перевіряємо наявність Telegram WebApp...');
+        log('window.Telegram:', window.Telegram);
+        log('window.Telegram.WebApp:', window.Telegram ? window.Telegram.WebApp : 'не знайдено');
         
         // Перевіряємо різні варіанти доступу до Telegram WebApp
         const telegram = window.Telegram || window.telegram;
         const webApp = telegram ? (telegram.WebApp || telegram.webApp) : null;
+        log('submit: telegram =', telegram);
+        log('submit: webApp =', webApp);
         
         if (telegram && webApp) {
             try {
+                log('Відправляємо дані через webApp.sendData:', data);
                 webApp.sendData(JSON.stringify(data));
+                log('Закриваємо WebApp через webApp.close()');
                 webApp.close();
-                console.log('Дані успішно відправлено в Telegram!');
+                log('Дані успішно відправлено в Telegram!');
             } catch (error) {
-                console.error('Помилка відправки даних:', error);
+                log('Помилка відправки даних:', error);
                 alert('Помилка відправки даних: ' + error.message);
             }
         } else {
-            console.error('Telegram WebApp не знайдено при відправці!');
+            log('Telegram WebApp не знайдено при відправці!');
             alert("Telegram WebApp не знайдено! Відкрийте форму через Telegram.");
         }
     });
