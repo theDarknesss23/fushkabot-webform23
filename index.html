@@ -53,7 +53,7 @@
   
   <!-- Діагностична панель -->
   <div id="debug-panel" style="background: #f0f0f0; padding: 10px; margin: 10px 0; border-radius: 5px; font-size: 12px;">
-    <div>Version: 2</div>
+    <div><strong>Version: 3</strong></div>
     <strong>🔧 Діагностика:</strong>
     <div id="debug-info">Завантаження...</div>
     <button type="button" onclick="showDebugInfo()" style="background: #666; margin-top: 5px; padding: 5px 10px; font-size: 12px;">Оновити діагностику</button>
@@ -87,7 +87,7 @@
     <label for="note">📝 Додатково</label>
     <textarea id="note" name="note"></textarea>
 
-    <button id="submit-button" type="submit">Надіслати</button>
+    <button id="submit-button" type="button">Надіслати</button>
   </form>
 
   <script>
@@ -214,55 +214,83 @@
         }
     });
 
-    // Обробка відправки форми
-    document.getElementById('fushka-form').addEventListener('click', async function(e) {
-        e.preventDefault();
-        log('Форма відправляється...');
-        
-        const formData = new FormData(this);
-        const data = {};
-        for (let [key, value] of formData.entries()) {
-            data[key] = value;
-        }
-        
-        // Додаємо timestamp
-        data.timestamp = new Date().toISOString();
-        data.userAgent = navigator.userAgent;
-        
-        log('Дані форми:', data);
-        
-        // Показуємо індикатор завантаження
+    // Забороняємо дефолтний submit форми і відправляємо тільки по кліку
+    (function enableClickOnlySubmit() {
+        const form = document.getElementById('fushka-form');
         const submitButton = document.getElementById('submit-button');
-        const originalText = submitButton.textContent;
-        submitButton.textContent = 'Відправляємо...';
-        submitButton.disabled = true;
-        
-        try {
-            // Перевіряємо наявність Telegram WebApp
-            const telegram = window.Telegram || window.telegram;
-            const webApp = telegram ? (telegram.WebApp || telegram.webApp) : null;
 
-            if (telegram && webApp) {
-                // Відправляємо тільки через Telegram WebApp
-                log('Відправляємо дані через Telegram WebApp:', data);
-                webApp.sendData(JSON.stringify(data));
-                log('Відправка ініційована, закриваємо WebApp.');
-                webApp.close();
-            } else {
-                // Без Telegram WebApp не відправляємо нічого (заборонено робити прямі HTTP-запити)
-                log('Telegram WebApp недоступний. Відправка заборонена за вимогою без прямих HTTP-запитів.');
-                alert('Відкрийте форму через Telegram для відправки. Прямі HTTP-запити вимкнено.');
+        if (!form || !submitButton) {
+            log('Не знайдено форму або кнопку для відправки');
+            return;
+        }
+
+        // Блокуємо стандартний submit з клавіатури/тача
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+            return false;
+        });
+
+        // Хелпер: збирання даних безпосередньо з форми
+        function collectFormData() {
+            const formData = new FormData(form);
+            const data = {};
+            for (let [key, value] of formData.entries()) {
+                data[key] = value;
+            }
+            data.timestamp = new Date().toISOString();
+            data.userAgent = navigator.userAgent;
+            return data;
+        }
+
+        // Валідація через HTML5 API
+        function validateForm() {
+            if (form.checkValidity()) {
+                return true;
+            }
+            // Підсвічуємо невалідні поля нативно
+            form.reportValidity();
+            return false;
+        }
+
+        // Основний хендлер кліку
+        submitButton.addEventListener('click', async function(event) {
+            event.preventDefault();
+            log('Клік відправки...');
+
+            if (!validateForm()) {
+                log('Валідація не пройдена');
+                return;
             }
 
-        } catch (error) {
-            log('Загальна помилка при відправці:', error);
-            alert('❌ Помилка відправки даних: ' + error.message);
-        } finally {
-            // Відновлюємо кнопку
-            submitButton.textContent = originalText;
-            submitButton.disabled = false;
-        }
-    });
+            const data = collectFormData();
+            log('Дані форми:', data);
+
+            const originalText = submitButton.textContent;
+            submitButton.textContent = 'Відправляємо...';
+            submitButton.disabled = true;
+
+            try {
+                const telegram = window.Telegram || window.telegram;
+                const webApp = telegram ? (telegram.WebApp || telegram.webApp) : null;
+
+                if (telegram && webApp) {
+                    log('Відправляємо дані через Telegram WebApp:', data);
+                    webApp.sendData(JSON.stringify(data));
+                    log('Відправка ініційована, закриваємо WebApp.');
+                    webApp.close();
+                } else {
+                    log('Telegram WebApp недоступний. Відправка заборонена за вимогою без прямих HTTP-запитів.');
+                    alert('Відкрийте форму через Telegram для відправки. Прямі HTTP-запити вимкнено.');
+                }
+            } catch (error) {
+                log('Загальна помилка при відправці:', error);
+                alert('❌ Помилка відправки даних: ' + error.message);
+            } finally {
+                submitButton.textContent = originalText;
+                submitButton.disabled = false;
+            }
+        });
+    })();
   </script>
 </body>
 </html>
