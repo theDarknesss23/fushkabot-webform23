@@ -87,7 +87,7 @@
     <label for="note">📝 Додатково</label>
     <textarea id="note" name="note"></textarea>
 
-    <button type="submit">Надіслати</button>
+    <button id="submit-button" type="submit">Надіслати</button>
   </form>
 
   <script>
@@ -215,7 +215,7 @@
     });
 
     // Обробка відправки форми
-    document.getElementById('fushka-form').addEventListener('submit', async function(e) {
+    document.getElementById('fushka-form').addEventListener('click', async function(e) {
         e.preventDefault();
         log('Форма відправляється...');
         
@@ -232,7 +232,7 @@
         log('Дані форми:', data);
         
         // Показуємо індикатор завантаження
-        const submitButton = this.querySelector('button[type="submit"]');
+        const submitButton = document.getElementById('submit-button');
         const originalText = submitButton.textContent;
         submitButton.textContent = 'Відправляємо...';
         submitButton.disabled = true;
@@ -245,16 +245,9 @@
             if (telegram && webApp) {
                 // Відправляємо тільки через Telegram WebApp
                 log('Відправляємо дані через Telegram WebApp:', data);
-                const result = webApp.sendData(JSON.stringify(data));
-                log('Результат відправки через Telegram:', result);
-
-                // Закриваємо лише якщо SDK повернув успіх
-                if (result === true) {
-                    log('Відправка підтверджена SDK. Закриваємо WebApp.');
-                    webApp.close();
-                } else {
-                   log(result);
-                }
+                webApp.sendData(JSON.stringify(data));
+                log('Відправка ініційована, закриваємо WebApp.');
+                webApp.close();
             } else {
                 // Без Telegram WebApp не відправляємо нічого (заборонено робити прямі HTTP-запити)
                 log('Telegram WebApp недоступний. Відправка заборонена за вимогою без прямих HTTP-запитів.');
