@@ -53,6 +53,7 @@
   
   <!-- Діагностична панель -->
   <div id="debug-panel" style="background: #f0f0f0; padding: 10px; margin: 10px 0; border-radius: 5px; font-size: 12px;">
+    <strong>Version: 1</strong>
     <strong>🔧 Діагностика:</strong>
     <div id="debug-info">Завантаження...</div>
     <button type="button" onclick="showDebugInfo()" style="background: #666; margin-top: 5px; padding: 5px 10px; font-size: 12px;">Оновити діагностику</button>
@@ -214,7 +215,7 @@
     });
 
     // Обробка відправки форми
-    document.getElementById('fushka-form').addEventListener('submit', function(e) {
+    document.getElementById('fushka-form').addEventListener('submit', async function(e) {
         e.preventDefault();
         log('Форма відправляється...');
         
@@ -223,32 +224,50 @@
         for (let [key, value] of formData.entries()) {
             data[key] = value;
         }
+        
+        // Додаємо timestamp
+        data.timestamp = new Date().toISOString();
+        data.userAgent = navigator.userAgent;
+        
         log('Дані форми:', data);
-        log('Перевіряємо наявність Telegram WebApp...');
-        log('window.Telegram:', window.Telegram);
-        log('window.Telegram.WebApp:', window.Telegram ? window.Telegram.WebApp : 'не знайдено');
         
-        // Перевіряємо різні варіанти доступу до Telegram WebApp
-        const telegram = window.Telegram || window.telegram;
-        const webApp = telegram ? (telegram.WebApp || telegram.webApp) : null;
-        log('submit: telegram =', telegram);
-        log('submit: webApp =', webApp);
+        // Показуємо індикатор завантаження
+        const submitButton = this.querySelector('button[type="submit"]');
+        const originalText = submitButton.textContent;
+        submitButton.textContent = 'Відправляємо...';
+        submitButton.disabled = true;
         
-        if (telegram && webApp) {
-            try {
-                log('Відправляємо дані через webApp.sendData:', data);
-               const result = webApp.sendData(JSON.stringify(data));
-               log('Результат відправки:', result);
-                log('Закриваємо WebApp через webApp.close()');
-               // webApp.close();
-                log('Дані успішно відправлено в Telegram!');
-            } catch (error) {
-                log('Помилка відправки даних:', error);
-                alert('Помилка відправки даних: ' + error.message);
+        try {
+            // Перевіряємо наявність Telegram WebApp
+            const telegram = window.Telegram || window.telegram;
+            const webApp = telegram ? (telegram.WebApp || telegram.webApp) : null;
+
+            if (telegram && webApp) {
+                // Відправляємо тільки через Telegram WebApp
+                log('Відправляємо дані через Telegram WebApp:', data);
+                const result = webApp.sendData(JSON.stringify(data));
+                log('Результат відправки через Telegram:', result);
+
+                // Закриваємо лише якщо SDK повернув успіх
+                if (result === true) {
+                    log('Відправка підтверджена SDK. Закриваємо WebApp.');
+                    webApp.close();
+                } else {
+                   log(result);
+                }
+            } else {
+                // Без Telegram WebApp не відправляємо нічого (заборонено робити прямі HTTP-запити)
+                log('Telegram WebApp недоступний. Відправка заборонена за вимогою без прямих HTTP-запитів.');
+                alert('Відкрийте форму через Telegram для відправки. Прямі HTTP-запити вимкнено.');
             }
-        } else {
-            log('Telegram WebApp не знайдено при відправці!');
-            alert("Telegram WebApp не знайдено! Відкрийте форму через Telegram.");
+
+        } catch (error) {
+            log('Загальна помилка при відправці:', error);
+            alert('❌ Помилка відправки даних: ' + error.message);
+        } finally {
+            // Відновлюємо кнопку
+            submitButton.textContent = originalText;
+            submitButton.disabled = false;
         }
     });
   </script>
