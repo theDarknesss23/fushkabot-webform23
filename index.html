@@ -3,9 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
   <script src="https://telegram.org/js/telegram-web-app.js?58"></script>
-
   <title>Форма фушки</title>
   <style>
     body {
@@ -24,13 +22,14 @@
       margin-top: 15px;
       font-weight: bold;
     }
-    input, textarea, select {
+    input, textarea {
       width: 100%;
       padding: 10px;
       margin-top: 5px;
       border: 1px solid #ccc;
       border-radius: 5px;
       font-size: 16px;
+      box-sizing: border-box;
     }
     button {
       margin-top: 20px;
@@ -46,18 +45,22 @@
     button:hover {
       background-color: #153d70;
     }
+    button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+    .version {
+      text-align: center;
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 20px;
+    }
   </style>
 </head>
 <body>
-  <h1>Нова фушка</h1>
+  <div class="version">Version: 3.1 (Simplified)</div>
   
-  <!-- Діагностична панель -->
-  <div id="debug-panel" style="background: #f0f0f0; padding: 10px; margin: 10px 0; border-radius: 5px; font-size: 12px;">
-    <div><strong>Version: 3</strong></div>
-    <strong>🔧 Діагностика:</strong>
-    <div id="debug-info">Завантаження...</div>
-    <button type="button" onclick="showDebugInfo()" style="background: #666; margin-top: 5px; padding: 5px 10px; font-size: 12px;">Оновити діагностику</button>
-  </div>
+  <h1>Нова фушка</h1>
   
   <form id="fushka-form">
     <label for="description">📝 Опис фушки</label>
@@ -87,210 +90,130 @@
     <label for="note">📝 Додатково</label>
     <textarea id="note" name="note"></textarea>
 
-    <button id="submit-button" type="button">Надіслати</button>
+    <button type="button" id="submit-btn">Надіслати</button>
   </form>
 
   <script>
-    // Додаємо глобальний логгер для зручності
-    function log(...args) {
-      console.log('[FUSHKA LOG]', ...args);
-    }
+    let webApp = null;
+    let isSubmitting = false;
 
-    // Функція для відображення діагностичної інформації
-    function showDebugInfo() {
-        log('Виклик showDebugInfo');
-        const debugInfo = document.getElementById('debug-info');
-        const telegram = window.Telegram || window.telegram;
-        const webApp = telegram ? (telegram.WebApp || telegram.webApp) : null;
-        log('showDebugInfo: telegram =', telegram);
-        log('showDebugInfo: webApp =', webApp);
-        
-        const info = {
-            'User Agent': navigator.userAgent,
-            'Telegram об\'єкт': telegram ? '✅ Знайдено' : '❌ Не знайдено',
-            'Telegram.WebApp': webApp ? '✅ Знайдено' : '❌ Не знайдено',
-            'URL': window.location.href,
-            'Час завантаження': new Date().toLocaleString('uk-UA'),
-            'window.Telegram': window.Telegram ? '✅ Є' : '❌ Немає',
-            'window.telegram': window.telegram ? '✅ Є' : '❌ Немає'
-        };
-        
-        let debugText = '';
-        for (let [key, value] of Object.entries(info)) {
-            debugText += `<strong>${key}:</strong> ${value}<br>`;
+    // Ініціалізація WebApp
+    function initWebApp() {
+      const telegram = window.Telegram || window.telegram;
+      webApp = telegram?.WebApp || telegram?.webApp;
+      
+      if (webApp) {
+        try {
+          webApp.ready();
+          webApp.expand();
+          console.log('WebApp ініціалізовано');
+        } catch (error) {
+          console.error('Помилка ініціалізації WebApp:', error);
         }
-        debugInfo.innerHTML = debugText;
-        log('showDebugInfo: оновлено діагностичну панель');
-    }
-
-    // Функція для ініціалізації Telegram WebApp
-    function initTelegramWebApp() {
-        log('Спроба ініціалізації Telegram WebApp...');
-        log('window.Telegram:', window.Telegram);
-        log('window.Telegram.WebApp:', window.Telegram ? window.Telegram.WebApp : 'не знайдено');
-        
-        // Перевіряємо різні варіанти доступу до Telegram WebApp
-        const telegram = window.Telegram || window.telegram;
-        const webApp = telegram ? (telegram.WebApp || telegram.webApp) : null;
-        
-        log('Альтернативна перевірка - telegram:', telegram);
-        log('Альтернативна перевірка - webApp:', webApp);
-        
-        if (telegram && webApp) {
-            try {
-                log('Викликаємо webApp.ready()');
-                webApp.ready();
-                log('Викликаємо webApp.expand()');
-                webApp.expand();
-                log('Telegram WebApp успішно ініціалізовано!');
-                return true;
-            } catch (error) {
-                log('Помилка ініціалізації Telegram WebApp:', error);
-                return false;
-            }
-        } else {
-            log('Telegram WebApp не знайдено!');
-            return false;
-        }
-    }
-
-    // Додаємо логування для всіх полів форми
-    function addFormFieldLogging() {
-      const form = document.getElementById('fushka-form');
-      if (!form) {
-        log('Форма не знайдена для логування полів!');
-        return;
       }
-      const fields = form.querySelectorAll('input, textarea, select');
-      fields.forEach(field => {
-        field.addEventListener('input', (e) => {
-          log(`Поле '${field.name}' змінилось:`, e.target.value);
-        });
-        field.addEventListener('focus', (e) => {
-          log(`Фокус на полі '${field.name}'`);
-        });
-        field.addEventListener('blur', (e) => {
-          log(`Втрата фокусу з поля '${field.name}', значення:`, e.target.value);
-        });
-      });
-      log('Додано логування для всіх полів форми');
     }
 
-    // Ініціалізація при завантаженні DOM
-    document.addEventListener("DOMContentLoaded", function() {
-        log('DOM завантажено, ініціалізуємо Telegram WebApp...');
+    // Валідація форми
+    function validateForm() {
+      const requiredFields = ['description', 'company', 'location', 'date', 'hours', 'rate', 'type', 'people'];
+      
+      for (const fieldName of requiredFields) {
+        const field = document.getElementById(fieldName);
+        if (!field || !field.value.trim()) {
+          alert(`Заповніть поле: ${fieldName}`);
+          return false;
+        }
+      }
+      return true;
+    }
+
+    // Збір даних форми
+    function collectFormData() {
+      const form = document.getElementById('fushka-form');
+      const formData = new FormData(form);
+      const data = {};
+      
+      for (let [key, value] of formData.entries()) {
+        data[key] = value;
+      }
+      
+      data.timestamp = new Date().toISOString();
+      data.userAgent = navigator.userAgent;
+      
+      return data;
+    }
+
+    // Відправка даних
+    function sendData(data) {
+      if (!webApp) {
+        alert('WebApp недоступний');
+        return false;
+      }
+      
+      try {
+        webApp.sendData(JSON.stringify(data));
+        webApp.close();
+        return true;
+      } catch (error) {
+        console.error('Помилка відправки:', error);
+        return false;
+      }
+    }
+
+    // Обробка відправки форми
+    function handleSubmit(event) {
+      event.preventDefault();
+      
+      if (isSubmitting) return;
+      isSubmitting = true;
+      
+      const submitButton = document.getElementById('submit-btn');
+      const originalText = submitButton.textContent;
+      
+      try {
+        if (!validateForm()) {
+          return;
+        }
         
-        // Показуємо початкову діагностику
-        showDebugInfo();
+        const data = collectFormData();
         
-        // Додаємо логування для полів форми
-        addFormFieldLogging();
+        submitButton.textContent = 'Відправляємо...';
+        submitButton.disabled = true;
         
-        // Спроба ініціалізації
-        if (!initTelegramWebApp()) {
-            log('Перша спроба ініціалізації не вдалася, чекаємо 1 сек.');
-            // Якщо не вдалося ініціалізувати одразу, спробуємо через невелику затримку
-            setTimeout(function() {
-                log('Повторна спроба ініціалізації Telegram WebApp...');
-                if (!initTelegramWebApp()) {
-                    log('Друга спроба не вдалася, чекаємо ще 2 сек.');
-                    // Спроба через більшу затримку
-                    setTimeout(function() {
-                        log('Третя спроба ініціалізації Telegram WebApp...');
-                        if (!initTelegramWebApp()) {
-                            log('Telegram WebApp не знайдено після трьох спроб!');
-                            alert("Telegram WebApp не знайдено! Відкрийте форму через Telegram.");
-                        }
-                        showDebugInfo();
-                    }, 2000);
-                }
-                // Оновлюємо діагностику після спроби
-                showDebugInfo();
-            }, 1000);
+        if (sendData(data)) {
+          submitButton.textContent = 'Відправлено!';
         } else {
-            log('Telegram WebApp ініціалізовано з першої спроби!');
-            // Оновлюємо діагностику якщо ініціалізація успішна
-            setTimeout(showDebugInfo, 500);
+          submitButton.textContent = 'Помилка відправки';
+          alert('Не вдалося відправити дані');
         }
+        
+      } catch (error) {
+        console.error('Помилка:', error);
+        alert('Помилка: ' + error.message);
+      } finally {
+        setTimeout(() => {
+          submitButton.textContent = originalText;
+          submitButton.disabled = false;
+          isSubmitting = false;
+        }, 2000);
+      }
+    }
+
+    // Налаштування обробників
+    function setupHandlers() {
+      const submitButton = document.getElementById('submit-btn');
+      
+      submitButton.addEventListener('click', function(event) {
+        event.preventDefault();
+        handleSubmit(event);
+      });
+    }
+
+    // Ініціалізація
+    document.addEventListener('DOMContentLoaded', function() {
+      initWebApp();
+      setupHandlers();
     });
-
-    // Забороняємо дефолтний submit форми і відправляємо тільки по кліку
-    (function enableClickOnlySubmit() {
-        const form = document.getElementById('fushka-form');
-        const submitButton = document.getElementById('submit-button');
-
-        if (!form || !submitButton) {
-            log('Не знайдено форму або кнопку для відправки');
-            return;
-        }
-
-        // Блокуємо стандартний submit з клавіатури/тача
-        form.addEventListener('submit', function(event) {
-            event.preventDefault();
-            return false;
-        });
-
-        // Хелпер: збирання даних безпосередньо з форми
-        function collectFormData() {
-            const formData = new FormData(form);
-            const data = {};
-            for (let [key, value] of formData.entries()) {
-                data[key] = value;
-            }
-            data.timestamp = new Date().toISOString();
-            data.userAgent = navigator.userAgent;
-            return data;
-        }
-
-        // Валідація через HTML5 API
-        function validateForm() {
-            if (form.checkValidity()) {
-                return true;
-            }
-            // Підсвічуємо невалідні поля нативно
-            form.reportValidity();
-            return false;
-        }
-
-        // Основний хендлер кліку
-        submitButton.addEventListener('click', async function(event) {
-            event.preventDefault();
-            log('Клік відправки...');
-
-            if (!validateForm()) {
-                log('Валідація не пройдена');
-                return;
-            }
-
-            const data = collectFormData();
-            log('Дані форми:', data);
-
-            const originalText = submitButton.textContent;
-            submitButton.textContent = 'Відправляємо...';
-            submitButton.disabled = true;
-
-            try {
-                const telegram = window.Telegram || window.telegram;
-                const webApp = telegram ? (telegram.WebApp || telegram.webApp) : null;
-
-                if (telegram && webApp) {
-                    log('Відправляємо дані через Telegram WebApp:', data);
-                    webApp.sendData(JSON.stringify(data));
-                    log('Відправка ініційована, закриваємо WebApp.');
-                    webApp.close();
-                } else {
-                    log('Telegram WebApp недоступний. Відправка заборонена за вимогою без прямих HTTP-запитів.');
-                    alert('Відкрийте форму через Telegram для відправки. Прямі HTTP-запити вимкнено.');
-                }
-            } catch (error) {
-                log('Загальна помилка при відправці:', error);
-                alert('❌ Помилка відправки даних: ' + error.message);
-            } finally {
-                submitButton.textContent = originalText;
-                submitButton.disabled = false;
-            }
-        });
-    })();
   </script>
 </body>
 </html>
