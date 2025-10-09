@@ -161,7 +161,7 @@
   <div class="container">
       <div class="header">
         <h1>Нова фушка</h1>
-        <div class="version">v5.3 DEBUG</div>
+        <div class="version">v5.4 NO-AUTOCLOSE</div>
         <div class="version" id="debug-info" style="color: #999; font-size: 10px; margin-top: 5px;"></div>
         <div id="status-log" style="
           background: #f0f0f0;
@@ -345,6 +345,22 @@
       ">
         🧪 ТЕСТ: Відправити напряму
       </button>
+
+      <button type="button" id="manual-close" style="
+        width: 100%;
+        padding: 12px;
+        font-size: 14px;
+        font-weight: 600;
+        color: white;
+        background-color: #6c757d;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        margin-top: 15px;
+        display: none;
+      ">
+        🚪 Закрити форму вручну
+      </button>
   </form>
   </div>
 
@@ -404,6 +420,12 @@
         try {
           addLog('🔧 Ініціалізація WebApp...');
           tg = webApp;
+          
+          const originalClose = tg.close;
+          tg.close = function() {
+            addLog('⚠️ ЗАБЛОКОВАНО автоматичне закриття!');
+            addLog('💡 Закрийте форму вручну після перегляду логів');
+          };
           
           tg.ready();
           tg.expand();
@@ -516,9 +538,11 @@
       function handleSubmit(event) {
         if (event) {
           event.preventDefault();
+          event.stopPropagation();
         }
         
         addLog(`🎯 Submit! Режим: ${useMainButton ? 'MainButton' : 'Fallback'}`);
+        addLog(`⏰ Час: ${new Date().toLocaleTimeString()}`);
         
         if (!validateForm()) {
           addLog('❌ Валідація не пройдена', 'error');
@@ -691,14 +715,15 @@
           addLog('🚀 Виклик tg.sendData()...');
           tg.sendData(jsonData);
           addLog('✅ Дані відправлено!', 'success');
-          addLog('⏳ Закриття через 2000мс (чекаємо бота)...');
+          addLog('ℹ️ Перевірте чи дані прийшли в бота');
+          addLog('💡 Форма залишається відкритою для перегляду логів');
           
-          setTimeout(() => {
-            if (tg && typeof tg.close === 'function') {
-              addLog('🚪 Закриття WebApp...');
-              tg.close();
-            }
-          }, 2000);
+          const closeBtn = document.getElementById('manual-close');
+          if (closeBtn) {
+            closeBtn.style.display = 'block';
+          }
+          
+          // НЕ ЗАКРИВАЄМО форму автоматично - щоб побачити логи
           
         } catch (error) {
           addLog(`❌ ПОМИЛКА: ${error.message}`, 'error');
@@ -729,7 +754,7 @@
       }
 
       function init() {
-        addLog('🚀 Ініціалізація v5.3...');
+        addLog('🚀 Ініціалізація v5.4 NO-AUTOCLOSE...');
         
         setupFormValidation();
         
@@ -740,6 +765,16 @@
           testBtn.addEventListener('click', () => {
             addLog('🧪 ТЕСТОВА кнопка натиснута');
             handleSubmit();
+          });
+        }
+        
+        const closeBtn = document.getElementById('manual-close');
+        if (closeBtn) {
+          closeBtn.addEventListener('click', () => {
+            addLog('🚪 Ручне закриття...');
+            if (tg && tg.close) {
+              window.Telegram.WebApp.close();
+            }
           });
         }
         
