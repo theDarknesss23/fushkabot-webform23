@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="description" content="Форма фушки">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <title>Форма фушки</title>
   <style>
     * {
@@ -216,7 +215,7 @@
   <div class="container">
     <div class="header">
       <h1>Нова фушка</h1>
-      <div class="version">v4.1</div>
+      <div class="version">v4.2</div>
     </div>
 
     <form id="fushka-form" novalidate>
@@ -369,31 +368,66 @@
     </div>
   </div>
 
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script>
     (function() {
       'use strict';
 
-      const tg = window.Telegram.WebApp;
+      let tg = null;
+      let isReady = false;
       const form = document.getElementById('fushka-form');
       const submitBtn = document.getElementById('submit-btn');
       const loadingIndicator = document.getElementById('loading');
-
       const REQUIRED_FIELDS = ['description', 'company', 'location', 'date', 'hours', 'rate', 'type', 'people'];
 
-      function initTelegramWebApp() {
+      function waitForTelegram(callback, maxAttempts = 50) {
+        let attempts = 0;
+        
+        const check = () => {
+          attempts++;
+          
+          if (window.Telegram && window.Telegram.WebApp) {
+            console.log('Telegram WebApp знайдено на спробі', attempts);
+            callback(window.Telegram.WebApp);
+            return;
+          }
+          
+          if (attempts >= maxAttempts) {
+            console.error('Telegram WebApp не знайдено після', maxAttempts, 'спроб');
+            alert('Помилка ініціалізації Telegram WebApp. Спробуйте перезавантажити сторінку.');
+            return;
+          }
+          
+          setTimeout(check, 100);
+        };
+        
+        check();
+      }
+
+      function initTelegramWebApp(webApp) {
         try {
+          tg = webApp;
+          
           tg.ready();
           tg.expand();
           
+          isReady = true;
+          console.log('WebApp ініціалізовано', {
+            platform: tg.platform,
+            version: tg.version,
+            initDataUnsafe: tg.initDataUnsafe
+          });
+          
           if (tg.themeParams) {
-            document.documentElement.style.setProperty('--tg-theme-bg-color', tg.themeParams.bg_color || '#ffffff');
-            document.documentElement.style.setProperty('--tg-theme-text-color', tg.themeParams.text_color || '#000000');
-            document.documentElement.style.setProperty('--tg-theme-hint-color', tg.themeParams.hint_color || '#999999');
-            document.documentElement.style.setProperty('--tg-theme-button-color', tg.themeParams.button_color || '#2481cc');
-            document.documentElement.style.setProperty('--tg-theme-button-text-color', tg.themeParams.button_text_color || '#ffffff');
+            const params = tg.themeParams;
+            if (params.bg_color) document.documentElement.style.setProperty('--tg-theme-bg-color', params.bg_color);
+            if (params.text_color) document.documentElement.style.setProperty('--tg-theme-text-color', params.text_color);
+            if (params.hint_color) document.documentElement.style.setProperty('--tg-theme-hint-color', params.hint_color);
+            if (params.button_color) document.documentElement.style.setProperty('--tg-theme-button-color', params.button_color);
+            if (params.button_text_color) document.documentElement.style.setProperty('--tg-theme-button-text-color', params.button_text_color);
           }
         } catch (error) {
-          console.error('WebApp init error:', error);
+          console.error('Помилка ініціалізації WebApp:', error);
         }
       }
 
@@ -498,23 +532,44 @@
       }
 
       function sendDataToBot(data) {
+        if (!tg || !isReady) {
+          console.error('Telegram WebApp не готовий');
+          return false;
+        }
+
         try {
           const jsonData = JSON.stringify(data);
+          
+          console.log('Відправка даних:', {
+            dataLength: jsonData.length,
+            data: data
+          });
           
           if (jsonData.length > 64000) {
             throw new Error('Дані занадто великі');
           }
 
           tg.sendData(jsonData);
+          console.log('Дані відправлено успішно');
           return true;
         } catch (error) {
-          console.error('Send error:', error);
+          console.error('Помилка відправки:', error);
           return false;
         }
       }
 
       function handleSubmit(event) {
         event.preventDefault();
+
+        console.log('Submit спрацював', {
+          isReady: isReady,
+          hasTg: !!tg
+        });
+
+        if (!isReady || !tg) {
+          alert('Telegram WebApp ще не готовий. Спробуйте через кілька секунд.');
+          return;
+        }
 
         if (!validateForm()) {
           const firstError = document.querySelector('.form-input.error, .form-textarea.error');
@@ -540,7 +595,7 @@
             throw new Error('Помилка відправки');
           }
         } catch (error) {
-          console.error('Submit error:', error);
+          console.error('Помилка submit:', error);
           alert('Помилка: ' + error.message);
           
           submitBtn.disabled = false;
@@ -572,14 +627,12 @@
       }
 
       function init() {
-        initTelegramWebApp();
-        setupFormValidation();
+        console.log('Ініціалізація форми...');
         
+        setupFormValidation();
         form.addEventListener('submit', handleSubmit);
-
-        if (tg.platform === 'unknown') {
-          console.warn('Not running in Telegram WebApp');
-        }
+        
+        waitForTelegram(initTelegramWebApp);
       }
 
       if (document.readyState === 'loading') {
