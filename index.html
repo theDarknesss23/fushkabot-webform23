@@ -2,218 +2,592 @@
 <html lang="uk">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="https://telegram.org/js/telegram-web-app.js?58"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="description" content="Форма фушки">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <title>Форма фушки</title>
   <style>
-    body {
-      font-family: sans-serif;
-      background-color: #f9f9f9;
-      padding: 20px;
-      max-width: 500px;
-      margin: auto;
-    }
-    h1 {
-      text-align: center;
-      color: #1b4d8a;
-    }
-    label {
-      display: block;
-      margin-top: 15px;
-      font-weight: bold;
-    }
-    input, textarea {
-      width: 100%;
-      padding: 10px;
-      margin-top: 5px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      font-size: 16px;
+    * {
+      margin: 0;
+      padding: 0;
       box-sizing: border-box;
     }
-    button {
-      margin-top: 20px;
-      width: 100%;
-      padding: 12px;
-      background-color: #1b4d8a;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      font-size: 16px;
-      cursor: pointer;
+
+    :root {
+      --tg-theme-bg-color: #ffffff;
+      --tg-theme-text-color: #000000;
+      --tg-theme-hint-color: #999999;
+      --tg-theme-link-color: #2481cc;
+      --tg-theme-button-color: #2481cc;
+      --tg-theme-button-text-color: #ffffff;
+      --primary-color: #1b4d8a;
+      --primary-hover: #153d70;
+      --error-color: #dc3545;
+      --success-color: #28a745;
+      --border-color: #e0e0e0;
+      --input-bg: #ffffff;
+      --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
-    button:hover {
-      background-color: #153d70;
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--tg-theme-bg-color);
+      color: var(--tg-theme-text-color);
+      padding: 0;
+      margin: 0;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
-    button:disabled {
-      background-color: #ccc;
-      cursor: not-allowed;
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
     }
-    .version {
+
+    .header {
       text-align: center;
+      margin-bottom: 30px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid var(--border-color);
+    }
+
+    .header h1 {
+      color: var(--primary-color);
+      font-size: 28px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .version {
       font-size: 12px;
-      color: #666;
+      color: var(--tg-theme-hint-color);
+      margin-top: 8px;
+    }
+
+    .form-group {
       margin-bottom: 20px;
+    }
+
+    .form-label {
+      display: block;
+      font-weight: 600;
+      font-size: 15px;
+      margin-bottom: 8px;
+      color: var(--tg-theme-text-color);
+    }
+
+    .form-label .emoji {
+      margin-right: 6px;
+    }
+
+    .form-input,
+    .form-textarea {
+      width: 100%;
+      padding: 12px 14px;
+      font-size: 16px;
+      border: 2px solid var(--border-color);
+      border-radius: 8px;
+      background-color: var(--input-bg);
+      color: var(--tg-theme-text-color);
+      transition: all 0.2s ease;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    .form-input:focus,
+    .form-textarea:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(27, 77, 138, 0.1);
+    }
+
+    .form-input.error,
+    .form-textarea.error {
+      border-color: var(--error-color);
+    }
+
+    .form-textarea {
+      resize: vertical;
+      min-height: 100px;
+      font-family: inherit;
+    }
+
+    .form-input[type="number"]::-webkit-inner-spin-button,
+    .form-input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    .form-input[type="number"] {
+      -moz-appearance: textfield;
+    }
+
+    .error-message {
+      display: none;
+      color: var(--error-color);
+      font-size: 13px;
+      margin-top: 6px;
+    }
+
+    .error-message.show {
+      display: block;
+    }
+
+    .submit-button {
+      width: 100%;
+      padding: 16px;
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--tg-theme-button-text-color);
+      background-color: var(--tg-theme-button-color);
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin-top: 30px;
+      box-shadow: var(--shadow);
+    }
+
+    .submit-button:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .submit-button:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .submit-button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .loading-indicator {
+      display: none;
+      text-align: center;
+      padding: 20px;
+      color: var(--tg-theme-hint-color);
+    }
+
+    .loading-indicator.show {
+      display: block;
+    }
+
+    .spinner {
+      border: 3px solid rgba(0, 0, 0, 0.1);
+      border-radius: 50%;
+      border-top: 3px solid var(--primary-color);
+      width: 30px;
+      height: 30px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 10px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .required {
+      color: var(--error-color);
+      margin-left: 2px;
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 15px;
+      }
+
+      .header h1 {
+        font-size: 24px;
+      }
+
+      .form-input,
+      .form-textarea {
+        font-size: 16px;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="version">Version: 3.1 (Simplified)</div>
-  
-  <h1>Нова фушка</h1>
-  
-  <form id="fushka-form">
-    <label for="description">📝 Опис фушки</label>
-    <textarea id="description" name="description" required></textarea>
+  <div class="container">
+    <div class="header">
+      <h1>Нова фушка</h1>
+      <div class="version">v4.0</div>
+    </div>
 
-    <label for="company">🏢 Назва компанії</label>
-    <input id="company" name="company" required />
+    <form id="fushka-form" novalidate>
+      <div class="form-group">
+        <label class="form-label" for="description">
+          <span class="emoji">📝</span>Опис фушки<span class="required">*</span>
+        </label>
+        <textarea 
+          id="description" 
+          name="description" 
+          class="form-textarea" 
+          required
+          maxlength="1000"
+        ></textarea>
+        <div class="error-message" id="description-error"></div>
+      </div>
 
-    <label for="location">📍 Локація</label>
-    <input id="location" name="location" required />
+      <div class="form-group">
+        <label class="form-label" for="company">
+          <span class="emoji">🏢</span>Назва компанії<span class="required">*</span>
+        </label>
+        <input 
+          id="company" 
+          name="company" 
+          class="form-input" 
+          type="text" 
+          required
+          maxlength="200"
+        />
+        <div class="error-message" id="company-error"></div>
+      </div>
 
-    <label for="date">📆 Дата</label>
-    <input id="date" name="date" type="text" required />
+      <div class="form-group">
+        <label class="form-label" for="location">
+          <span class="emoji">📍</span>Локація<span class="required">*</span>
+        </label>
+        <input 
+          id="location" 
+          name="location" 
+          class="form-input" 
+          type="text" 
+          required
+          maxlength="200"
+        />
+        <div class="error-message" id="location-error"></div>
+      </div>
 
-    <label for="hours">⏰ Початок / кінець</label>
-    <input id="hours" name="hours" required />
+      <div class="form-group">
+        <label class="form-label" for="date">
+          <span class="emoji">📆</span>Дата<span class="required">*</span>
+        </label>
+        <input 
+          id="date" 
+          name="date" 
+          class="form-input" 
+          type="text" 
+          required
+          placeholder="напр. 10.10.2025"
+          maxlength="50"
+        />
+        <div class="error-message" id="date-error"></div>
+      </div>
 
-    <label for="rate">💰 Ставка (Kč/год)</label>
-    <input id="rate" name="rate" type="number" required />
+      <div class="form-group">
+        <label class="form-label" for="hours">
+          <span class="emoji">⏰</span>Початок / кінець<span class="required">*</span>
+        </label>
+        <input 
+          id="hours" 
+          name="hours" 
+          class="form-input" 
+          type="text" 
+          required
+          placeholder="напр. 08:00 - 16:00"
+          maxlength="50"
+        />
+        <div class="error-message" id="hours-error"></div>
+      </div>
 
-    <label for="type">🧤 Тип роботи</label>
-    <input id="type" name="type" required />
+      <div class="form-group">
+        <label class="form-label" for="rate">
+          <span class="emoji">💰</span>Ставка (Kč/год)<span class="required">*</span>
+        </label>
+        <input 
+          id="rate" 
+          name="rate" 
+          class="form-input" 
+          type="number" 
+          required
+          min="0"
+          max="10000"
+          step="0.01"
+        />
+        <div class="error-message" id="rate-error"></div>
+      </div>
 
-    <label for="people">👤 Кількість людей</label>
-    <input id="people" name="people" type="number" required />
+      <div class="form-group">
+        <label class="form-label" for="type">
+          <span class="emoji">🧤</span>Тип роботи<span class="required">*</span>
+        </label>
+        <input 
+          id="type" 
+          name="type" 
+          class="form-input" 
+          type="text" 
+          required
+          maxlength="200"
+        />
+        <div class="error-message" id="type-error"></div>
+      </div>
 
-    <label for="note">📝 Додатково</label>
-    <textarea id="note" name="note"></textarea>
+      <div class="form-group">
+        <label class="form-label" for="people">
+          <span class="emoji">👤</span>Кількість людей<span class="required">*</span>
+        </label>
+        <input 
+          id="people" 
+          name="people" 
+          class="form-input" 
+          type="number" 
+          required
+          min="1"
+          max="1000"
+          step="1"
+        />
+        <div class="error-message" id="people-error"></div>
+      </div>
 
-    <button type="button" id="submit-btn">Надіслати</button>
-  </form>
+      <div class="form-group">
+        <label class="form-label" for="note">
+          <span class="emoji">📝</span>Додатково
+        </label>
+        <textarea 
+          id="note" 
+          name="note" 
+          class="form-textarea"
+          maxlength="1000"
+        ></textarea>
+        <div class="error-message" id="note-error"></div>
+      </div>
+
+      <button type="submit" class="submit-button" id="submit-btn">
+        Надіслати
+      </button>
+    </form>
+
+    <div class="loading-indicator" id="loading">
+      <div class="spinner"></div>
+      <div>Відправляємо...</div>
+    </div>
+  </div>
 
   <script>
-    let webApp = null;
-    let isSubmitting = false;
+    (function() {
+      'use strict';
 
-    // Ініціалізація WebApp
-    function initWebApp() {
-      const telegram = window.Telegram || window.telegram;
-      webApp = telegram?.WebApp || telegram?.webApp;
-      
-      if (webApp) {
+      const tg = window.Telegram.WebApp;
+      const form = document.getElementById('fushka-form');
+      const submitBtn = document.getElementById('submit-btn');
+      const loadingIndicator = document.getElementById('loading');
+
+      const REQUIRED_FIELDS = ['description', 'company', 'location', 'date', 'hours', 'rate', 'type', 'people'];
+
+      function initTelegramWebApp() {
         try {
-          webApp.ready();
-          webApp.expand();
-          console.log('WebApp ініціалізовано');
+          tg.ready();
+          tg.expand();
+          
+          if (tg.themeParams) {
+            document.documentElement.style.setProperty('--tg-theme-bg-color', tg.themeParams.bg_color || '#ffffff');
+            document.documentElement.style.setProperty('--tg-theme-text-color', tg.themeParams.text_color || '#000000');
+            document.documentElement.style.setProperty('--tg-theme-hint-color', tg.themeParams.hint_color || '#999999');
+            document.documentElement.style.setProperty('--tg-theme-button-color', tg.themeParams.button_color || '#2481cc');
+            document.documentElement.style.setProperty('--tg-theme-button-text-color', tg.themeParams.button_text_color || '#ffffff');
+          }
         } catch (error) {
-          console.error('Помилка ініціалізації WebApp:', error);
+          console.error('WebApp init error:', error);
         }
       }
-    }
 
-    // Валідація форми
-    function validateForm() {
-      const requiredFields = ['description', 'company', 'location', 'date', 'hours', 'rate', 'type', 'people'];
-      
-      for (const fieldName of requiredFields) {
+      function sanitizeInput(input) {
+        if (typeof input !== 'string') {
+          return input;
+        }
+        const div = document.createElement('div');
+        div.textContent = input;
+        return div.innerHTML;
+      }
+
+      function validateField(fieldName, value) {
+        const trimmedValue = typeof value === 'string' ? value.trim() : value;
+
+        if (REQUIRED_FIELDS.includes(fieldName)) {
+          if (!trimmedValue && trimmedValue !== 0) {
+            return 'Це поле обов\'язкове';
+          }
+        }
+
+        if (fieldName === 'rate') {
+          const numValue = parseFloat(value);
+          if (isNaN(numValue) || numValue < 0 || numValue > 10000) {
+            return 'Введіть коректну ставку (0-10000)';
+          }
+        }
+
+        if (fieldName === 'people') {
+          const numValue = parseInt(value, 10);
+          if (isNaN(numValue) || numValue < 1 || numValue > 1000) {
+            return 'Введіть коректну кількість (1-1000)';
+          }
+        }
+
+        if (typeof trimmedValue === 'string' && trimmedValue.length > 1000) {
+          return 'Занадто довгий текст';
+        }
+
+        return null;
+      }
+
+      function showFieldError(fieldName, errorMessage) {
         const field = document.getElementById(fieldName);
-        if (!field || !field.value.trim()) {
-          alert(`Заповніть поле: ${fieldName}`);
+        const errorElement = document.getElementById(`${fieldName}-error`);
+
+        if (field) {
+          field.classList.add('error');
+        }
+
+        if (errorElement && errorMessage) {
+          errorElement.textContent = errorMessage;
+          errorElement.classList.add('show');
+        }
+      }
+
+      function clearFieldError(fieldName) {
+        const field = document.getElementById(fieldName);
+        const errorElement = document.getElementById(`${fieldName}-error`);
+
+        if (field) {
+          field.classList.remove('error');
+        }
+
+        if (errorElement) {
+          errorElement.textContent = '';
+          errorElement.classList.remove('show');
+        }
+      }
+
+      function validateForm() {
+        let isValid = true;
+        const formData = new FormData(form);
+
+        REQUIRED_FIELDS.forEach(fieldName => {
+          clearFieldError(fieldName);
+          const value = formData.get(fieldName);
+          const error = validateField(fieldName, value);
+
+          if (error) {
+            showFieldError(fieldName, error);
+            isValid = false;
+          }
+        });
+
+        return isValid;
+      }
+
+      function collectFormData() {
+        const formData = new FormData(form);
+        const data = {};
+
+        for (const [key, value] of formData.entries()) {
+          const sanitizedValue = sanitizeInput(value);
+          data[key] = sanitizedValue;
+        }
+
+        data.timestamp = new Date().toISOString();
+        data.userAgent = navigator.userAgent.substring(0, 200);
+
+        return data;
+      }
+
+      function sendDataToBot(data) {
+        try {
+          const jsonData = JSON.stringify(data);
+          
+          if (jsonData.length > 64000) {
+            throw new Error('Дані занадто великі');
+          }
+
+          tg.sendData(jsonData);
+          return true;
+        } catch (error) {
+          console.error('Send error:', error);
           return false;
         }
       }
-      return true;
-    }
 
-    // Збір даних форми
-    function collectFormData() {
-      const form = document.getElementById('fushka-form');
-      const formData = new FormData(form);
-      const data = {};
-      
-      for (let [key, value] of formData.entries()) {
-        data[key] = value;
-      }
-      
-      data.timestamp = new Date().toISOString();
-      data.userAgent = navigator.userAgent;
-      
-      return data;
-    }
+      function handleSubmit(event) {
+        event.preventDefault();
 
-    // Відправка даних
-    function sendData(data) {
-      if (!webApp) {
-        alert('WebApp недоступний');
-        return false;
-      }
-      
-      try {
-        webApp.sendData(JSON.stringify(data));
-        webApp.close();
-        return true;
-      } catch (error) {
-        console.error('Помилка відправки:', error);
-        return false;
-      }
-    }
-
-    // Обробка відправки форми
-    function handleSubmit(event) {
-      event.preventDefault();
-      
-      if (isSubmitting) return;
-      isSubmitting = true;
-      
-      const submitButton = document.getElementById('submit-btn');
-      const originalText = submitButton.textContent;
-      
-      try {
         if (!validateForm()) {
+          const firstError = document.querySelector('.form-input.error, .form-textarea.error');
+          if (firstError) {
+            firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            firstError.focus();
+          }
           return;
         }
-        
-        const data = collectFormData();
-        
-        submitButton.textContent = 'Відправляємо...';
-        submitButton.disabled = true;
-        
-        if (sendData(data)) {
-          submitButton.textContent = 'Відправлено!';
-        } else {
-          submitButton.textContent = 'Помилка відправки';
-          alert('Не вдалося відправити дані');
+
+        submitBtn.disabled = true;
+        form.style.display = 'none';
+        loadingIndicator.classList.add('show');
+
+        try {
+          const data = collectFormData();
+          
+          if (sendDataToBot(data)) {
+            setTimeout(() => {
+              tg.close();
+            }, 500);
+          } else {
+            throw new Error('Помилка відправки');
+          }
+        } catch (error) {
+          console.error('Submit error:', error);
+          alert('Помилка: ' + error.message);
+          
+          submitBtn.disabled = false;
+          form.style.display = 'block';
+          loadingIndicator.classList.remove('show');
         }
-        
-      } catch (error) {
-        console.error('Помилка:', error);
-        alert('Помилка: ' + error.message);
-      } finally {
-        setTimeout(() => {
-          submitButton.textContent = originalText;
-          submitButton.disabled = false;
-          isSubmitting = false;
-        }, 2000);
       }
-    }
 
-    // Налаштування обробників
-    function setupHandlers() {
-      const submitButton = document.getElementById('submit-btn');
-      
-      submitButton.addEventListener('click', function(event) {
-        event.preventDefault();
-        handleSubmit(event);
-      });
-    }
+      function setupFormValidation() {
+        REQUIRED_FIELDS.forEach(fieldName => {
+          const field = document.getElementById(fieldName);
+          if (field) {
+            field.addEventListener('blur', function() {
+              const error = validateField(fieldName, this.value);
+              if (error) {
+                showFieldError(fieldName, error);
+              } else {
+                clearFieldError(fieldName);
+              }
+            });
 
-    // Ініціалізація
-    document.addEventListener('DOMContentLoaded', function() {
-      initWebApp();
-      setupHandlers();
-    });
+            field.addEventListener('input', function() {
+              if (field.classList.contains('error')) {
+                clearFieldError(fieldName);
+              }
+            });
+          }
+        });
+      }
+
+      function init() {
+        initTelegramWebApp();
+        setupFormValidation();
+        
+        form.addEventListener('submit', handleSubmit);
+
+        if (tg.platform === 'unknown') {
+          console.warn('Not running in Telegram WebApp');
+        }
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+      } else {
+        init();
+      }
+    })();
   </script>
 </body>
 </html>
