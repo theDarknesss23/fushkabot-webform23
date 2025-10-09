@@ -161,8 +161,19 @@
   <div class="container">
       <div class="header">
   <h1>Нова фушка</h1>
-        <div class="version">v5.1</div>
+        <div class="version">v5.2 DEBUG</div>
         <div class="version" id="debug-info" style="color: #999; font-size: 10px; margin-top: 5px;"></div>
+        <div id="status-log" style="
+          background: #f0f0f0;
+          padding: 10px;
+          margin-top: 10px;
+          border-radius: 5px;
+          font-size: 11px;
+          max-height: 200px;
+          overflow-y: auto;
+          font-family: monospace;
+          text-align: left;
+        "></div>
       </div>
 
     <form id="fushka-form" novalidate autocomplete="off">
@@ -332,26 +343,38 @@
       let useMainButton = false;
       const form = document.getElementById('fushka-form');
       const fallbackBtn = document.getElementById('fallback-submit');
+      const statusLog = document.getElementById('status-log');
       const REQUIRED_FIELDS = ['description', 'company', 'location', 'date', 'hours', 'rate', 'type', 'people'];
+
+      function addLog(message, type = 'info') {
+        const timestamp = new Date().toLocaleTimeString();
+        const color = type === 'error' ? '#dc3545' : type === 'success' ? '#28a745' : '#333';
+        const entry = document.createElement('div');
+        entry.style.color = color;
+        entry.textContent = `[${timestamp}] ${message}`;
+        statusLog.appendChild(entry);
+        statusLog.scrollTop = statusLog.scrollHeight;
+        console.log(`[${timestamp}] ${message}`);
+      }
 
       function waitForTelegram(callback, maxAttempts = 50) {
         let attempts = 0;
+        addLog('⏳ Очікування Telegram WebApp...');
         
         const check = () => {
           attempts++;
           
           if (window.Telegram && window.Telegram.WebApp) {
-            console.log('✅ Telegram WebApp знайдено на спробі', attempts);
+            addLog(`✅ Telegram WebApp знайдено (спроба ${attempts})`, 'success');
             callback(window.Telegram.WebApp);
             return;
           }
           
           if (attempts >= maxAttempts) {
-            console.error('❌ Telegram WebApp не знайдено після', maxAttempts, 'спроб');
-            console.log('⚠️ Показую fallback кнопку...');
+            addLog(`❌ Telegram WebApp не знайдено після ${maxAttempts} спроб`, 'error');
             if (fallbackBtn) {
               fallbackBtn.style.display = 'block';
-              console.log('✅ Fallback кнопка показана (через timeout)');
+              addLog('⚠️ Показано fallback кнопку');
             }
             return;
           }
@@ -364,6 +387,7 @@
 
       function initTelegramWebApp(webApp) {
         try {
+          addLog('🔧 Ініціалізація WebApp...');
           tg = webApp;
           
           tg.ready();
@@ -381,7 +405,8 @@
             hasMainButton: !!tg.MainButton
           };
           
-          console.log('✅ WebApp ініціалізовано', debugInfo);
+          addLog(`✅ WebApp готовий: ${tg.platform} v${tg.version}`, 'success');
+          addLog(`👤 User ID: ${debugInfo.userId || 'N/A'}`);
           
           const debugElement = document.getElementById('debug-info');
           if (debugElement) {
@@ -398,24 +423,24 @@
           }
           
           if (tg.MainButton && typeof tg.MainButton.show === 'function') {
-            console.log('✅ MainButton доступний, використовуємо його');
+            addLog('🔘 MainButton доступний');
             useMainButton = true;
             setupMainButton();
           } else {
-            console.log('⚠️ MainButton недоступний, використовуємо fallback');
+            addLog('⚠️ MainButton недоступний, fallback режим');
             useMainButton = false;
             setupFallbackButton();
           }
           
         } catch (error) {
-          console.error('❌ Помилка ініціалізації:', error);
+          addLog(`❌ Помилка ініціалізації: ${error.message}`, 'error');
           useMainButton = false;
           setupFallbackButton();
         }
       }
 
       function setupMainButton() {
-        console.log('🔘 Налаштування MainButton...');
+        addLog('🔘 Налаштування MainButton...');
         
         try {
           tg.MainButton.text = 'Надіслати';
@@ -428,21 +453,21 @@
           form.addEventListener('input', checkFormValidity);
           checkFormValidity();
           
-          console.log('✅ MainButton налаштовано');
+          addLog('✅ MainButton готова', 'success');
         } catch (error) {
-          console.error('❌ Помилка налаштування MainButton:', error);
+          addLog(`❌ Помилка MainButton: ${error.message}`, 'error');
           useMainButton = false;
           setupFallbackButton();
         }
       }
 
       function setupFallbackButton() {
-        console.log('🔘 Налаштування Fallback кнопки...');
+        addLog('🔘 Налаштування Fallback кнопки...');
         
         if (fallbackBtn) {
           fallbackBtn.style.display = 'block';
           fallbackBtn.addEventListener('click', handleSubmit);
-          console.log('✅ Fallback кнопка показана');
+          addLog('✅ Fallback кнопка показана', 'success');
         }
       }
 
@@ -470,13 +495,10 @@
           event.preventDefault();
         }
         
-        console.log('🎯 Submit викликано', {
-          useMainButton: useMainButton,
-          eventType: event?.type
-        });
+        addLog(`🎯 Submit! Режим: ${useMainButton ? 'MainButton' : 'Fallback'}`);
         
         if (!validateForm()) {
-          console.log('❌ Валідація не пройдена');
+          addLog('❌ Валідація не пройдена', 'error');
           
           if (useMainButton && tg.showAlert) {
             tg.showAlert('Заповніть всі обов\'язкові поля');
@@ -623,52 +645,40 @@
     }
 
       function sendDataToBot(data) {
-        console.log('📤 sendDataToBot викликано', {
-          hasTg: !!tg,
-          isReady: isReady,
-          platform: tg?.platform
-        });
+        addLog('📤 Підготовка до відправки...');
 
         try {
           const jsonData = JSON.stringify(data);
           
-          console.log('📊 Дані підготовлено:', {
-            length: jsonData.length,
-            keys: Object.keys(data),
-            preview: jsonData.substring(0, 150)
-          });
+          addLog(`📊 Розмір даних: ${jsonData.length} bytes`);
+          addLog(`📋 Поля: ${Object.keys(data).join(', ')}`);
           
           if (jsonData.length > 64000) {
             throw new Error('Дані занадто великі');
           }
 
           if (!tg) {
-            console.error('❌ tg об\'єкт відсутній');
             throw new Error('Telegram WebApp не ініціалізовано');
           }
 
           if (typeof tg.sendData !== 'function') {
-            console.error('❌ tg.sendData не функція');
             throw new Error('tg.sendData недоступний');
           }
 
-          console.log('🚀 Виклик tg.sendData()...');
+          addLog('🚀 Виклик tg.sendData()...');
           tg.sendData(jsonData);
-          console.log('✅ tg.sendData() викликано успішно');
+          addLog('✅ Дані відправлено!', 'success');
+          addLog('⏳ Закриття через 300мс...');
           
           setTimeout(() => {
-            console.log('🚪 Закриття WebApp...');
             if (tg && typeof tg.close === 'function') {
+              addLog('🚪 Закриття WebApp...');
               tg.close();
             }
           }, 300);
           
         } catch (error) {
-          console.error('❌ Помилка sendDataToBot:', {
-            error: error,
-            message: error.message,
-            stack: error.stack
-          });
+          addLog(`❌ ПОМИЛКА: ${error.message}`, 'error');
           throw error;
         }
       }
