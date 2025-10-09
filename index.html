@@ -159,13 +159,13 @@
 </head>
 <body>
   <div class="container">
-    <div class="header">
-      <h1>Нова фушка</h1>
-      <div class="version">v4.4</div>
-      <div class="version" id="debug-info" style="color: #999; font-size: 10px; margin-top: 5px;"></div>
-    </div>
+      <div class="header">
+  <h1>Нова фушка</h1>
+        <div class="version">v5.1</div>
+        <div class="version" id="debug-info" style="color: #999; font-size: 10px; margin-top: 5px;"></div>
+      </div>
 
-    <form id="fushka-form" novalidate>
+    <form id="fushka-form" novalidate autocomplete="off">
       <div class="form-group">
         <label class="form-label" for="description">
           <span class="emoji">📝</span>Опис фушки<span class="required">*</span>
@@ -303,17 +303,35 @@
         ></textarea>
         <div class="error-message" id="note-error"></div>
       </div>
-    </form>
+
+      <button type="submit" id="fallback-submit" style="
+        width: 100%;
+        padding: 16px;
+        font-size: 17px;
+        font-weight: 600;
+        color: white;
+        background-color: #2481cc;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        margin-top: 30px;
+        display: none;
+      ">
+        Надіслати
+      </button>
+  </form>
   </div>
 
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://telegram.org/js/telegram-web-app.js?v=7.0"></script>
   <script>
     (function() {
       'use strict';
 
       let tg = null;
       let isReady = false;
+      let useMainButton = false;
       const form = document.getElementById('fushka-form');
+      const fallbackBtn = document.getElementById('fallback-submit');
       const REQUIRED_FIELDS = ['description', 'company', 'location', 'date', 'hours', 'rate', 'type', 'people'];
 
       function waitForTelegram(callback, maxAttempts = 50) {
@@ -330,6 +348,11 @@
           
           if (attempts >= maxAttempts) {
             console.error('❌ Telegram WebApp не знайдено після', maxAttempts, 'спроб');
+            console.log('⚠️ Показую fallback кнопку...');
+            if (fallbackBtn) {
+              fallbackBtn.style.display = 'block';
+              console.log('✅ Fallback кнопка показана (через timeout)');
+            }
             return;
           }
           
@@ -354,7 +377,8 @@
             colorScheme: tg.colorScheme,
             isExpanded: tg.isExpanded,
             viewportHeight: tg.viewportHeight,
-            userId: tg.initDataUnsafe?.user?.id
+            userId: tg.initDataUnsafe?.user?.id,
+            hasMainButton: !!tg.MainButton
           };
           
           console.log('✅ WebApp ініціалізовано', debugInfo);
@@ -373,27 +397,53 @@
             if (params.button_text_color) document.documentElement.style.setProperty('--tg-theme-button-text-color', params.button_text_color);
           }
           
-          setupMainButton();
+          if (tg.MainButton && typeof tg.MainButton.show === 'function') {
+            console.log('✅ MainButton доступний, використовуємо його');
+            useMainButton = true;
+            setupMainButton();
+          } else {
+            console.log('⚠️ MainButton недоступний, використовуємо fallback');
+            useMainButton = false;
+            setupFallbackButton();
+          }
           
         } catch (error) {
           console.error('❌ Помилка ініціалізації:', error);
+          useMainButton = false;
+          setupFallbackButton();
         }
       }
 
       function setupMainButton() {
         console.log('🔘 Налаштування MainButton...');
         
-        tg.MainButton.text = 'Надіслати';
-        tg.MainButton.color = tg.themeParams.button_color || '#2481cc';
-        tg.MainButton.textColor = tg.themeParams.button_text_color || '#ffffff';
-        tg.MainButton.show();
+        try {
+          tg.MainButton.text = 'Надіслати';
+          tg.MainButton.color = tg.themeParams?.button_color || '#2481cc';
+          tg.MainButton.textColor = tg.themeParams?.button_text_color || '#ffffff';
+          tg.MainButton.show();
+          
+          tg.MainButton.onClick(handleSubmit);
+          
+          form.addEventListener('input', checkFormValidity);
+          checkFormValidity();
+          
+          console.log('✅ MainButton налаштовано');
+        } catch (error) {
+          console.error('❌ Помилка налаштування MainButton:', error);
+          useMainButton = false;
+          setupFallbackButton();
+        }
+      }
+
+      function setupFallbackButton() {
+        console.log('🔘 Налаштування Fallback кнопки...');
         
-        tg.MainButton.onClick(handleMainButtonClick);
-        
-        form.addEventListener('input', checkFormValidity);
-        checkFormValidity();
-        
-        console.log('✅ MainButton налаштовано');
+        if (fallbackBtn) {
+          fallbackBtn.style.display = 'block';
+          fallbackBtn.addEventListener('click', handleSubmit);
+          console.log('✅ Fallback кнопка показана');
+        }
       }
 
       function checkFormValidity() {
@@ -415,12 +465,25 @@
         }
       }
 
-      function handleMainButtonClick() {
-        console.log('🎯 MainButton натиснуто');
+      function handleSubmit(event) {
+        if (event) {
+          event.preventDefault();
+        }
+        
+        console.log('🎯 Submit викликано', {
+          useMainButton: useMainButton,
+          eventType: event?.type
+        });
         
         if (!validateForm()) {
           console.log('❌ Валідація не пройдена');
-          tg.showAlert('Заповніть всі обов\'язкові поля');
+          
+          if (useMainButton && tg.showAlert) {
+            tg.showAlert('Заповніть всі обов\'язкові поля');
+          } else {
+            alert('Заповніть всі обов\'язкові поля');
+          }
+          
           const firstError = document.querySelector('.form-input.error, .form-textarea.error');
           if (firstError) {
             firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -429,8 +492,14 @@
         }
 
         console.log('✅ Валідація пройдена');
-        tg.MainButton.showProgress();
-        tg.MainButton.disable();
+        
+        if (useMainButton && tg.MainButton) {
+          tg.MainButton.showProgress();
+          tg.MainButton.disable();
+        } else if (fallbackBtn) {
+          fallbackBtn.disabled = true;
+          fallbackBtn.textContent = 'Відправка...';
+        }
 
         try {
           const data = collectFormData();
@@ -438,9 +507,18 @@
           sendDataToBot(data);
         } catch (error) {
           console.error('❌ Помилка:', error);
-          tg.MainButton.hideProgress();
-          tg.MainButton.enable();
-          tg.showAlert('Помилка: ' + error.message);
+          
+          if (useMainButton && tg.MainButton) {
+            tg.MainButton.hideProgress();
+            tg.MainButton.enable();
+            if (tg.showAlert) {
+              tg.showAlert('Помилка: ' + error.message);
+            }
+          } else if (fallbackBtn) {
+            fallbackBtn.disabled = false;
+            fallbackBtn.textContent = 'Надіслати';
+            alert('Помилка: ' + error.message);
+          }
         }
       }
 
@@ -529,51 +607,68 @@
         return isValid;
       }
 
-      function collectFormData() {
-        const formData = new FormData(form);
-        const data = {};
-
+    function collectFormData() {
+      const formData = new FormData(form);
+      const data = {};
+      
         for (const [key, value] of formData.entries()) {
           const sanitizedValue = sanitizeInput(value);
           data[key] = sanitizedValue;
-        }
-
-        data.timestamp = new Date().toISOString();
-        data.userAgent = navigator.userAgent.substring(0, 200);
-
-        return data;
       }
+      
+      data.timestamp = new Date().toISOString();
+        data.userAgent = navigator.userAgent.substring(0, 200);
+      
+      return data;
+    }
 
       function sendDataToBot(data) {
-        console.log('📤 sendDataToBot викликано');
-
-        if (!tg || !isReady) {
-          console.error('❌ WebApp не готовий');
-          throw new Error('WebApp не готовий');
-        }
+        console.log('📤 sendDataToBot викликано', {
+          hasTg: !!tg,
+          isReady: isReady,
+          platform: tg?.platform
+        });
 
         try {
           const jsonData = JSON.stringify(data);
           
           console.log('📊 Дані підготовлено:', {
             length: jsonData.length,
-            keys: Object.keys(data)
+            keys: Object.keys(data),
+            preview: jsonData.substring(0, 150)
           });
           
           if (jsonData.length > 64000) {
             throw new Error('Дані занадто великі');
           }
 
+          if (!tg) {
+            console.error('❌ tg об\'єкт відсутній');
+            throw new Error('Telegram WebApp не ініціалізовано');
+          }
+
+          if (typeof tg.sendData !== 'function') {
+            console.error('❌ tg.sendData не функція');
+            throw new Error('tg.sendData недоступний');
+          }
+
           console.log('🚀 Виклик tg.sendData()...');
           tg.sendData(jsonData);
-          console.log('✅ Дані відправлено, закриття через 300мс...');
+          console.log('✅ tg.sendData() викликано успішно');
           
           setTimeout(() => {
-            tg.close();
+            console.log('🚪 Закриття WebApp...');
+            if (tg && typeof tg.close === 'function') {
+              tg.close();
+            }
           }, 300);
           
         } catch (error) {
-          console.error('❌ Помилка sendDataToBot:', error);
+          console.error('❌ Помилка sendDataToBot:', {
+            error: error,
+            message: error.message,
+            stack: error.stack
+          });
           throw error;
         }
       }
@@ -601,11 +696,13 @@
       }
 
       function init() {
-        console.log('🚀 === ІНІЦІАЛІЗАЦІЯ v5.0 ===');
+        console.log('🚀 === ІНІЦІАЛІЗАЦІЯ v5.1 ===');
         console.log('Platform:', navigator.platform);
         console.log('User Agent:', navigator.userAgent.substring(0, 100));
         
         setupFormValidation();
+        
+        form.addEventListener('submit', handleSubmit);
         
         waitForTelegram(initTelegramWebApp);
       }
