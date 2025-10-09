@@ -160,8 +160,8 @@
 <body>
   <div class="container">
       <div class="header">
-  <h1>Нова фушка</h1>
-        <div class="version">v5.2 DEBUG</div>
+        <h1>Нова фушка</h1>
+        <div class="version">v5.3 DEBUG</div>
         <div class="version" id="debug-info" style="color: #999; font-size: 10px; margin-top: 5px;"></div>
         <div id="status-log" style="
           background: #f0f0f0;
@@ -330,6 +330,21 @@
       ">
         Надіслати
       </button>
+
+      <button type="button" id="test-send" style="
+        width: 100%;
+        padding: 12px;
+        font-size: 14px;
+        font-weight: 600;
+        color: white;
+        background-color: #dc3545;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        margin-top: 15px;
+      ">
+        🧪 ТЕСТ: Відправити напряму
+      </button>
   </form>
   </div>
 
@@ -448,7 +463,15 @@
           tg.MainButton.textColor = tg.themeParams?.button_text_color || '#ffffff';
           tg.MainButton.show();
           
-          tg.MainButton.onClick(handleSubmit);
+          tg.MainButton.onClick(() => {
+            addLog('🔘 MainButton натиснута!');
+            handleSubmit();
+          });
+          
+          tg.onEvent('mainButtonClicked', () => {
+            addLog('🔘 Event: mainButtonClicked');
+            handleSubmit();
+          });
           
           form.addEventListener('input', checkFormValidity);
           checkFormValidity();
@@ -668,14 +691,14 @@
           addLog('🚀 Виклик tg.sendData()...');
           tg.sendData(jsonData);
           addLog('✅ Дані відправлено!', 'success');
-          addLog('⏳ Закриття через 300мс...');
+          addLog('⏳ Закриття через 2000мс (чекаємо бота)...');
           
           setTimeout(() => {
             if (tg && typeof tg.close === 'function') {
               addLog('🚪 Закриття WebApp...');
               tg.close();
             }
-          }, 300);
+          }, 2000);
           
         } catch (error) {
           addLog(`❌ ПОМИЛКА: ${error.message}`, 'error');
@@ -706,13 +729,19 @@
       }
 
       function init() {
-        console.log('🚀 === ІНІЦІАЛІЗАЦІЯ v5.1 ===');
-        console.log('Platform:', navigator.platform);
-        console.log('User Agent:', navigator.userAgent.substring(0, 100));
+        addLog('🚀 Ініціалізація v5.3...');
         
         setupFormValidation();
         
         form.addEventListener('submit', handleSubmit);
+        
+        const testBtn = document.getElementById('test-send');
+        if (testBtn) {
+          testBtn.addEventListener('click', () => {
+            addLog('🧪 ТЕСТОВА кнопка натиснута');
+            handleSubmit();
+          });
+        }
         
         waitForTelegram(initTelegramWebApp);
       }
